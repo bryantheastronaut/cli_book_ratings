@@ -1,0 +1,6 @@
+[package]
+name = "cli_book_ratings"
+version = "0.1.0"
+authors = ["Bryan Gilbraith <gilbraith.bryan@gmail.com>"]
+
+[dependencies]
