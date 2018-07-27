@@ -1,84 +1,60 @@
 use std::collections::HashMap;
 use std::io;
 
-type ReviewsMap = HashMap<String, Vec<f32>>;
+type ReviewList = HashMap<String, Vec<Review>>;
 
-fn handle_new_review(review_map: ReviewsMap) -> ReviewsMap {
-    let mut new_review_map = review_map;
-    println!("Are you adding a new book with a score or just a new score?");
-    println!("1. New book with score\n2. New score only");
-    let mut response = String::new();
-    io::stdin().read_line(&mut response)
-        .expect("Failed to read user input");
-    match response.trim().parse() {
-        Ok(1) => {
-            new_review_map = add_book(new_review_map);
-        },
-        Ok(2) => {
-            new_review_map = add_score(new_review_map);
-        },
-        _ => (),
-    };
-    new_review_map
+struct Review {
+    score: f32,
+    review_text: String,
 }
 
-fn print_reviews(reviews: &ReviewsMap) {
+fn print_reviews(reviews: &ReviewList) {
     for (book, scores) in reviews {
-        let count = scores.len() as f32;
-        let mut average = scores.iter().fold(0.0, |sum, val| sum + val);
-        average = average / count;
-        println!("{}. {} reviews. Average score: {:.1}", book, count, average);
-    }
-}
-
-fn add_book(reviews: ReviewsMap) -> ReviewsMap {
-    println!("inside add book");
-    reviews
-}
-
-fn add_score(reviews: ReviewsMap) -> ReviewsMap {
-    let mut book_number = String::new();
-    let books_len = reviews.keys().len() as i32;
-    println!("What book are you adding a score to?");
-    for (i, book) in reviews.keys().enumerate() {
-        println!("{}. {}", i+1, book);
-    }
-    io::stdin().read_line(&mut book_number)
-        .expect("Failed to read line");
-    match book_number.trim().parse::<i32>() {
-        Ok(n) if n < books_len && n > 0 => {
-            println!("Whats ur score? (Must be between 0.0 and 5.0)");
-            let mut score = String::new();
-            io::stdin().read_line(&mut score)
-                .expect("Cannot read input");
-            let score: f64 = score.trim().parse::<f64>().unwrap();
-            if score > 5.0 || score < 0.0 {
-                println!("Invalid score. Must be between 0.0 and 5.00");
-            } else {
-                println!("Nice!");
-                // score is good, push to vec.
-            }
-        },
-        _ => (),
+        println!("{}:", book);
+        for r in scores {
+            println!("{}: {}", r.score, r.review_text);
+        };
+        println!("--------------------------------------");
     };
+}
+
+fn add_review(mut reviews: ReviewList) -> ReviewList {
+    println!("What is the title of the book you want to review?");
+    let mut book_title = String::new();
+    io::stdin().read_line(&mut book_title).expect("Cannot read input 0.o");
+    let book_title = book_title.trim().to_string();
+    println!("What score do you give it? (Must be between 0.0 and 5.0)");
+    let mut score = String::new();
+    io::stdin().read_line(&mut score).expect("Cannot read input");
+    let score = score.trim().parse::<f32>().unwrap();
+    let mut review_text = String::new();
+    println!("What do you have to say about it?");
+    io::stdin().read_line(&mut review_text).expect("Cannot read user input");
+    let review_text = review_text.trim().to_string();
+    let new_review = Review {
+        score, review_text
+    };
+    reviews.entry(book_title).or_insert(vec![]).push(new_review);
+    print_reviews(&reviews);
     reviews
 }
 
 fn main() {
-    let mut reviews = HashMap::new();
-    reviews.insert(String::from("Dune"), vec![4.8, 5.0, 4.75, 3.9]);
-    reviews.insert(String::from("Neuromancer"), vec![4.4, 3.9, 4.65, 4.4]);
-    reviews.insert(String::from("The Bible"), vec![1.0, 0.4, 1.45]);
+    println!("Welcome to the best CLI book review system available!");
+    let mut reviews: ReviewList = HashMap::new();
+    let dune_review = Review {
+        score: 4.5,
+        review_text: "This book was great. I liked the spice :)".to_string(),
+    };
+    reviews.entry("Dune".to_string()).or_insert(vec![]).push(dune_review);
     print_reviews(&reviews);
-    println!("Add a review? Y/N");
-    let mut should_add_review = String::new();
-    io::stdin().read_line(&mut should_add_review)
-        .expect("Failed to read user input");
-    match should_add_review.trim().to_uppercase().as_ref() {
-        "Y" | "YES" => {
-            reviews = handle_new_review(reviews);
-            print_reviews(&reviews);
-        },
-        _ => println!("Thanks! bye"),
+    let mut user_input = String::new();
+    println!("Do you want to add a review?");
+    println!("1. Add review");
+    io::stdin().read_line(&mut user_input)
+        .expect("Cannot read user input");
+    match user_input.trim().parse() {
+        Ok(1) => add_review(reviews),
+        _ => reviews,
     };
 }
